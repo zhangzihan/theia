@@ -31,11 +31,6 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 export const THEIA_EXT = 'theia-workspace';
 export const VSCODE_EXT = 'code-workspace';
 
-export const IWorkspaceService = Symbol('IWorkspaceService');
-export interface IWorkspaceService {
-    roots: Promise<FileStat[]>;
-}
-
 /**
  * The workspace service.
  */
