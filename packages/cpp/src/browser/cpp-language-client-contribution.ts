@@ -26,6 +26,7 @@ import { MessageService } from '@theia/core/lib/common/message-service';
 import { CPP_LANGUAGE_ID, CPP_LANGUAGE_NAME, HEADER_AND_SOURCE_FILE_EXTENSIONS } from '../common';
 import { CppBuildConfigurationManager, CppBuildConfiguration } from './cpp-build-configurations';
 import { CppBuildConfigurationsStatusBarElement } from './cpp-build-configurations-statusbar-element';
+import { WindowService } from '@theia/core/lib/browser/window/window-service';
 
 /**
  * Clangd extension to set clangd-specific "initializationOptions" in the
@@ -47,6 +48,9 @@ export class CppLanguageClientContribution extends BaseLanguageClientContributio
 
     @inject(CppBuildConfigurationsStatusBarElement)
     protected readonly cppBuildConfigurationsStatusBarElement: CppBuildConfigurationsStatusBarElement;
+
+    @inject(WindowService)
+    protected readonly windowService: WindowService;
 
     constructor(
         @inject(Workspace) protected readonly workspace: Workspace,
@@ -117,7 +121,7 @@ export class CppLanguageClientContribution extends BaseLanguageClientContributio
                 'You can refer to the clangd page for instructions.';
             this.messageService.error(ERROR_MESSAGE, READ_INSTRUCTIONS_ACTION).then(selected => {
                 if (READ_INSTRUCTIONS_ACTION === selected) {
-                    window.open('https://clang.llvm.org/extra/clangd.html');
+                    this.windowService.openNewWindow('https://clang.llvm.org/extra/clangd.html', { external: true });
                 }
             });
             this.logger.error(ERROR_MESSAGE);
