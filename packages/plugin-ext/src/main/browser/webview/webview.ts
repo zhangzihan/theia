@@ -66,6 +66,85 @@ export class WebviewWidget extends BaseWidget {
         this.iframe.contentWindow!.postMessage(message, '*');
     }
 
+    setOptions(options: WebviewWidgetOptions) {
+        if (!this.iframe || this.options.allowScripts === options.allowScripts) {
+            return;
+        }
+
+        this.updateSandboxAttribute(this.iframe, options.allowScripts);
+
+        this.options = options;
+        this.reloadFrame();
+    }
+
+    private reloadFrame() {
+        if (!this.iframe || !this.iframe.contentDocument || !this.iframe.contentDocument.documentElement) {
+            return;
+        }
+        this.setHTML(this.iframe.contentDocument.documentElement.innerHTML);
+    }
+
+    private updateSandboxAttribute(element: HTMLElement, isAllowScript?: boolean) {
+        if (!element) {
+            return;
+        }
+        const allowScripts = isAllowScript !== undefined ? isAllowScript : this.options.allowScripts;
+        element.setAttribute('sandbox', allowScripts ? 'allow-scripts allow-forms allow-same-origin' : 'allow-same-origin');
+    }
+
+    private updateApiScript(contentDocument: Document, isAllowScript?: boolean) {
+         if (!contentDocument) {
+             return;
+         }
+        const allowScripts = isAllowScript !== undefined ? isAllowScript : this.options.allowScripts;
+        const scriptId = 'webview-widget-codeApi';
+        if (!allowScripts) {
+            const script = contentDocument.getElementById(scriptId);
+            if (!script) {
+                return;
+            }
+            script!.parentElement!.removeChild(script!);
+            return;
+        }
+
+        const codeApiScript = contentDocument.createElement('script');
+        codeApiScript.id = scriptId;
+        codeApiScript.textContent = `
+            const acquireVsCodeApi = (function() {
+                let acquired = false;
+                let state = ${this.state ? `JSON.parse(${JSON.stringify(this.state)})` : undefined};
+                return () => {
+                    if (acquired) {
+                        throw new Error('An instance of the VS Code API has already been acquired');
+                    }
+                    acquired = true;
+                    return Object.freeze({
+                        postMessage: function(msg) {
+                            return window.postMessageExt({ command: 'onmessage', data: msg }, '*');
+                        },
+                        setState: function(newState) {
+                            state = newState;
+                            window.postMessageExt({ command: 'do-update-state', data: JSON.stringify(newState) }, '*');
+                            return newState;
+                        },
+                        getState: function() {
+                            return state;
+                        }
+                    });
+                };
+            })();
+            delete window.parent;
+            delete window.top;
+            delete window.frameElement;
+         `;
+        const parent = contentDocument.head ? contentDocument.head : contentDocument.body;
+        if (parent.hasChildNodes()) {
+            parent.insertBefore(codeApiScript, parent.firstChild);
+        } else {
+            parent.appendChild(codeApiScript);
+        }
+    }
+
     setHTML(html: string) {
         html = html.replace('theia-resource:/', '/webview/');
         html = html.replace('vscode-resource:/', '/webview/');
@@ -73,68 +152,23 @@ export class WebviewWidget extends BaseWidget {
         if (!newDocument || !newDocument.body) {
             return;
         }
-
         (<any>newDocument.querySelectorAll('a')).forEach((a: any) => {
             if (!a.title) {
                 a.title = a.href;
             }
         });
-
-        if (this.options.allowScripts) {
-            const defaultScript = newDocument.createElement('script');
-            defaultScript.textContent = `
-                const acquireVsCodeApi = (function() {
-                    let acquired = false;
-
-                    let state = ${this.state ? `JSON.parse(${JSON.stringify(this.state)})` : undefined};
-
-                    return () => {
-                        if (acquired) {
-                            throw new Error('An instance of the VS Code API has already been acquired');
-                        }
-                        acquired = true;
-                        return Object.freeze({
-                            postMessage: function(msg) {
-                                return window.postMessageExt({ command: 'onmessage', data: msg }, '*');
-                            },
-                            setState: function(newState) {
-                                state = newState;
-                                window.postMessageExt({ command: 'do-update-state', data: JSON.stringify(newState) }, '*');
-                                return newState;
-                            },
-                            getState: function() {
-                                return state;
-                            }
-                        });
-                    };
-                })();
-                delete window.parent;
-                delete window.top;
-                delete window.frameElement;
-            `;
-
-            const parent = newDocument.head ? newDocument.head : newDocument.body;
-            if (parent.hasChildNodes()) {
-                parent.insertBefore(defaultScript, parent.firstChild);
-            } else {
-                parent.appendChild(defaultScript);
-            }
-        }
-
+        this.updateApiScript(newDocument);
         const previousPendingFrame = this.iframe;
         if (previousPendingFrame) {
             previousPendingFrame.setAttribute('id', '');
             this.node.removeChild(previousPendingFrame);
         }
-
         const newFrame = document.createElement('iframe');
         newFrame.setAttribute('id', 'pending-frame');
         newFrame.setAttribute('frameborder', '0');
-        newFrame.setAttribute('sandbox', this.options.allowScripts ? 'allow-scripts allow-forms allow-same-origin' : 'allow-same-origin');
         newFrame.style.cssText = 'display: block; margin: 0; overflow: hidden; position: absolute; width: 100%; height: 100%; visibility: hidden';
         this.node.appendChild(newFrame);
         this.iframe = newFrame;
-
         newFrame.contentDocument!.open('text/html', 'replace');
 
         const onLoad = (contentDocument: any, contentWindow: any) => {
@@ -200,6 +234,7 @@ export class WebviewWidget extends BaseWidget {
         newFrame.contentDocument!.write(newDocument!.documentElement!.innerHTML);
         newFrame.contentDocument!.close();
 
+        this.updateSandboxAttribute(newFrame);
     }
 }
 

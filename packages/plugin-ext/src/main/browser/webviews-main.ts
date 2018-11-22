@@ -60,13 +60,24 @@ export class WebviewsMainImpl implements WebviewsMain {
                 this.keybindingRegistry.run(e);
             },
             onLoad: contentDocument => {
-                const parent = contentDocument.head ? contentDocument.head : contentDocument.body;
-                const styleTag = contentDocument.createElement('style');
-                styleTag.type = 'text/css';
-                parent.appendChild(styleTag);
-                this.themeRulesService.setRules(styleTag, this.themeRulesService.getCurrentThemeRules());
+                const styleId = 'webview-widget-theme';
+                let styleElement: HTMLElement | null | undefined;
+                if (!toDispose.disposed) {
+                    // if reload the frame
+                    toDispose.dispose();
+                    styleElement = contentDocument.getElementById(styleId);
+                }
+                if (!styleElement) {
+                    styleElement = contentDocument.createElement('style');
+                    styleElement.setAttribute('type', 'text/css');
+                    styleElement.setAttribute('id', styleId);
+                    const parent = contentDocument.head ? contentDocument.head : contentDocument.body;
+                    parent.appendChild((styleElement));
+                }
+
+                this.themeRulesService.setRules(styleElement, this.themeRulesService.getCurrentThemeRules());
                 toDispose.push(this.themeService.onThemeChange(() => {
-                    this.themeRulesService.setRules(styleTag, this.themeRulesService.getCurrentThemeRules());
+                    this.themeRulesService.setRules(<HTMLElement>styleElement, this.themeRulesService.getCurrentThemeRules());
                 }));
             }
         });
@@ -99,7 +110,8 @@ export class WebviewsMainImpl implements WebviewsMain {
         webview.setHTML(value);
     }
     $setOptions(handle: string, options: WebviewOptions): void {
-        throw new Error('Method not implemented.');
+        const webview = this.getWebview(handle);
+        webview.setOptions( { allowScripts: options ? options.enableScripts : false });
     }
     $postMessage(handle: string, value: any): Thenable<boolean> {
         const webview = this.getWebview(handle);
