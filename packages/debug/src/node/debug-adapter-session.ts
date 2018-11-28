@@ -35,11 +35,10 @@ import {
     DebugAdapterExecutable,
     CommunicationProvider,
     DebugAdapterSession,
-    DebugAdapterSessionFactory,
     DebugAdapterFactory
 } from './debug-model';
 import { DebugProtocol } from 'vscode-debugprotocol';
-import { WebSocketChannel } from '@theia/core/lib/common/messaging/web-socket-channel';
+import { IWebSocket } from 'vscode-ws-jsonrpc/lib/socket/socket';
 
 /**
  * [DebugAdapterFactory](#DebugAdapterFactory) implementation based on
@@ -97,7 +96,7 @@ export class DebugAdapterSessionImpl implements DebugAdapterSession {
     private static TWO_CRLF = '\r\n\r\n';
 
     private readonly toDispose = new DisposableCollection();
-    private channel: WebSocketChannel | undefined;
+    private channel: IWebSocket | undefined;
     private contentLength: number;
     private buffer: Buffer;
 
@@ -114,7 +113,7 @@ export class DebugAdapterSessionImpl implements DebugAdapterSession {
         ]);
     }
 
-    async start(channel: WebSocketChannel): Promise<void> {
+    async start(channel: IWebSocket): Promise<void> {
         if (this.channel) {
             throw new Error('The session has already been started, id: ' + this.id);
         }
@@ -196,19 +195,5 @@ export class DebugAdapterSessionImpl implements DebugAdapterSession {
 
     async stop(): Promise<void> {
         this.toDispose.dispose();
-    }
-}
-
-/**
- * [DebugAdapterSessionFactory](#DebugAdapterSessionFactory) implementation.
- */
-@injectable()
-export class DebugAdapterSessionFactoryImpl implements DebugAdapterSessionFactory {
-
-    get(sessionId: string, communicationProvider: CommunicationProvider): DebugAdapterSession {
-        return new DebugAdapterSessionImpl(
-            sessionId,
-            communicationProvider
-        );
     }
 }
