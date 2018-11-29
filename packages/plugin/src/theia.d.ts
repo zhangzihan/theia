@@ -2482,8 +2482,8 @@ declare module '@theia/plugin' {
         title: string;
 
         /**
-		 * Icon for the panel shown in UI.
-		 */
+         * Icon for the panel shown in UI.
+         */
         iconPath?: Uri | { light: Uri; dark: Uri };
 
         /**
