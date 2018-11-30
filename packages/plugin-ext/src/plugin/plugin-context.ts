@@ -118,8 +118,8 @@ export function createAPIFactory(
     const outputChannelRegistryExt = new OutputChannelRegistryExt(rpc);
     const languagesExt = rpc.set(MAIN_RPC_CONTEXT.LANGUAGES_EXT, new LanguagesExtImpl(rpc, documents, commandRegistry));
     const treeViewsExt = rpc.set(MAIN_RPC_CONTEXT.TREE_VIEWS_EXT, new TreeViewsExtImpl(rpc, commandRegistry));
-    const debugExt = rpc.set(MAIN_RPC_CONTEXT.DEBUG_EXT, new DebugExtImpl(rpc));
-    rpc.set(MAIN_RPC_CONTEXT.CONNECTION_EXT, new ConnectionExtImpl(rpc));
+    const connectionExt = rpc.set(MAIN_RPC_CONTEXT.CONNECTION_EXT, new ConnectionExtImpl(rpc));
+    rpc.set(MAIN_RPC_CONTEXT.DEBUG_EXT, new DebugExtImpl(rpc, connectionExt));
 
     return function (plugin: InternalPlugin): typeof theia {
         const commands: typeof theia.commands = {
@@ -167,8 +167,8 @@ export function createAPIFactory(
                 return editors.onDidChangeTextEditorVisibleRanges(listener, thisArg, disposables);
             },
             async showTextDocument(documentArg: theia.TextDocument | Uri,
-                                   optionsArg?: theia.TextDocumentShowOptions | theia.ViewColumn,
-                                   preserveFocus?: boolean
+                optionsArg?: theia.TextDocumentShowOptions | theia.ViewColumn,
+                preserveFocus?: boolean
             ): Promise<theia.TextEditor> {
                 let documentOptions: theia.TextDocumentShowOptions | undefined;
                 const uri: Uri = documentArg instanceof Uri ? documentArg : documentArg.uri;

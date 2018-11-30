@@ -75,9 +75,9 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
     const languagesMain = new LanguagesMainImpl(rpc);
     rpc.set(PLUGIN_RPC_CONTEXT.LANGUAGES_MAIN, languagesMain);
 
-    const pluginConnection = new ConnectionMainImpl(rpc);
-    rpc.set(PLUGIN_RPC_CONTEXT.CONNECTION_MAIN, pluginConnection);
+    const connectionMain = new ConnectionMainImpl(rpc);
+    rpc.set(PLUGIN_RPC_CONTEXT.CONNECTION_MAIN, connectionMain);
 
-    const debugMain = new DebugMainImpl(rpc, container);
+    const debugMain = new DebugMainImpl(rpc, connectionMain, container);
     rpc.set(PLUGIN_RPC_CONTEXT.DEBUG_MAIN, debugMain);
 }
