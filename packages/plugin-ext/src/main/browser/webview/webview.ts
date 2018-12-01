@@ -73,7 +73,6 @@ export class WebviewWidget extends BaseWidget {
 
     setHTML(html: string) {
         html = html.replace('theia-resource:/', '/webview/');
-        html = html.replace('vscode-resource:/', '/webview/');
         const newDocument = new DOMParser().parseFromString(html, 'text/html');
         if (!newDocument || !newDocument.body) {
             return;
@@ -175,6 +174,29 @@ export class WebviewWidget extends BaseWidget {
         codeApiScript.id = scriptId;
         codeApiScript.textContent = `
             const acquireVsCodeApi = (function() {
+                let acquired = false;
+                let state = ${this.state ? `JSON.parse(${JSON.stringify(this.state)})` : undefined};
+                return () => {
+                    if (acquired) {
+                        throw new Error('An instance of the VS Code API has already been acquired');
+                    }
+                    acquired = true;
+                    return Object.freeze({
+                        postMessage: function(msg) {
+                            return window.postMessageExt({ command: 'onmessage', data: msg }, '*');
+                        },
+                        setState: function(newState) {
+                            state = newState;
+                            window.postMessageExt({ command: 'do-update-state', data: JSON.stringify(newState) }, '*');
+                            return newState;
+                        },
+                        getState: function() {
+                            return state;
+                        }
+                    });
+                };
+            })();
+            const acquireTheiaApi = (function() {
                 let acquired = false;
                 let state = ${this.state ? `JSON.parse(${JSON.stringify(this.state)})` : undefined};
                 return () => {
