@@ -133,7 +133,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
         this._workspace = workspaceStat;
         if (this._workspace) {
             const uri = new URI(this._workspace.uri);
-            this.toDisposeOnWorkspace.push(await this.watcher.watchFileChanges(uri));
+            this.watchRootUri(uri);
             this.setURLFragment(uri.path.toString());
         } else {
             this.setURLFragment('');
@@ -471,16 +471,20 @@ export class WorkspaceService implements FrontendApplicationContribution {
         }
     }
 
-    protected async watchRoot(root: FileStat): Promise<void> {
-        const uriStr = root.uri;
+    protected watchRootUri(uri: URI): void {
+        const uriStr = uri.toString();
         if (this.rootWatchers.has(uriStr)) {
             return;
         }
-        const watcher = this.watcher.watchFileChanges(new URI(uriStr));
+        const watcher = this.watcher.watchFileChanges(uri);
         this.rootWatchers.set(uriStr, Disposable.create(() => {
             watcher.then(disposable => disposable.dispose());
             this.rootWatchers.delete(uriStr);
         }));
+    }
+
+    protected async watchRoot(root: FileStat): Promise<void> {
+        this.watchRootUri(new URI(root.uri));
     }
 
 }
