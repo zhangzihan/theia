@@ -28,6 +28,7 @@ import { JAVA_LANGUAGE_ID, JAVA_LANGUAGE_NAME } from '../common';
 import { JavaCliContribution } from './java-cli-contribution';
 import { ContributionProvider } from '@theia/core';
 import { JavaExtensionContribution } from './java-extension-model';
+import { AddressInfo } from 'net';
 
 export type ConfigurationType = 'config_win' | 'config_mac' | 'config_linux';
 export const configurations = new Map<typeof process.platform, ConfigurationType>();
@@ -106,7 +107,7 @@ export class JavaContribution extends BaseLanguageServerContribution {
 
             this.logInfo('logs at ' + path.resolve(workspacePath, '.metadata', '.log'));
             const env = Object.create(process.env);
-            const address = server.address();
+            const address = server.address() as AddressInfo;
             env.CLIENT_HOST = address.address;
             env.CLIENT_PORT = address.port;
             this.createProcessSocketConnection(socket, socket, command, args, { env })
