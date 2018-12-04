@@ -16,6 +16,7 @@
 
 import { illegalArgument } from '../common/errors';
 import * as theia from '@theia/plugin';
+import * as crypto from 'crypto';
 import URI from 'vscode-uri';
 import { relative } from '../common/paths-util';
 import { startsWithIgnoreCase } from '../common/strings';
@@ -1275,4 +1276,388 @@ export enum ProgressLocation {
      * Show progress as notification with an optional cancel button. Supports to show infinite and discrete progress.
      */
     Notification = 15
+}
+
+export class ProcessExecution {
+    private _process: string;
+    private _args: string[];
+    private _options: theia.ProcessExecutionOptions | undefined;
+
+    constructor(process: string, options?: theia.ProcessExecutionOptions);
+    constructor(process: string, args: string[], options?: theia.ProcessExecutionOptions);
+    constructor(process: string, varg1?: string[] | theia.ProcessExecutionOptions, varg2?: theia.ProcessExecutionOptions) {
+        if (typeof process !== 'string') {
+            throw illegalArgument('process');
+        }
+        this._process = process;
+        if (varg1 !== undefined) {
+            if (Array.isArray(varg1)) {
+                this._args = varg1;
+                this._options = varg2;
+            } else {
+                this._options = varg1;
+            }
+        }
+        if (this._args === undefined) {
+            this._args = [];
+        }
+    }
+
+    get process(): string {
+        return this._process;
+    }
+
+    set process(value: string) {
+        if (typeof value !== 'string') {
+            throw illegalArgument('process');
+        }
+        this._process = value;
+    }
+
+    get args(): string[] {
+        return this._args;
+    }
+
+    set args(value: string[]) {
+        if (!Array.isArray(value)) {
+            value = [];
+        }
+        this._args = value;
+    }
+
+    get options(): theia.ProcessExecutionOptions | undefined {
+        return this._options;
+    }
+
+    set options(value: theia.ProcessExecutionOptions | undefined) {
+        this._options = value;
+    }
+
+    public computeId(): string {
+        const hash = crypto.createHash('md5');
+        hash.update('process');
+        if (this._process !== void 0) {
+            hash.update(this._process);
+        }
+        if (this._args && this._args.length > 0) {
+            for (const arg of this._args) {
+                hash.update(arg);
+            }
+        }
+        return hash.digest('hex');
+    }
+}
+
+export enum ShellQuoting {
+    Escape = 1,
+    Strong = 2,
+    Weak = 3
+}
+
+export enum TaskPanelKind {
+    Shared = 1,
+    Dedicated = 2,
+    New = 3
+}
+
+export enum TaskRevealKind {
+    Always = 1,
+    Silent = 2,
+    Never = 3
+}
+
+export class ShellExecution {
+    private _commandLine: string;
+    private _command: string | theia.ShellQuotedString;
+    private _args: (string | theia.ShellQuotedString)[];
+    private _options: theia.ShellExecutionOptions | undefined;
+
+    constructor(commandLine: string, options?: theia.ShellExecutionOptions);
+    constructor(command: string | theia.ShellQuotedString, args: (string | theia.ShellQuotedString)[], options?: theia.ShellExecutionOptions);
+
+    constructor(arg0: string | theia.ShellQuotedString, arg1?: theia.ShellExecutionOptions | (string | theia.ShellQuotedString)[], arg2?: theia.ShellExecutionOptions) {
+        if (Array.isArray(arg1) || typeof arg1 === 'string') {
+            if (!arg0) {
+                throw illegalArgument('command can\'t be undefined or null');
+            }
+            if (typeof arg0 !== 'string' && typeof arg0.value !== 'string') {
+                throw illegalArgument('command');
+            }
+            this._command = arg0;
+            this._args = arg1 as (string | theia.ShellQuotedString)[];
+            this._options = arg2;
+        } else {
+            if (typeof arg0 !== 'string') {
+                throw illegalArgument('commandLine');
+            }
+            this._commandLine = arg0;
+            this._options = arg1;
+        }
+    }
+
+    get commandLine(): string {
+        return this._commandLine;
+    }
+
+    set commandLine(value: string) {
+        if (typeof value !== 'string') {
+            throw illegalArgument('commandLine');
+        }
+        this._commandLine = value;
+    }
+
+    get command(): string | theia.ShellQuotedString {
+        return this._command;
+    }
+
+    set command(value: string | theia.ShellQuotedString) {
+        if (typeof value !== 'string' && typeof value.value !== 'string') {
+            throw illegalArgument('command');
+        }
+        this._command = value;
+    }
+
+    get args(): (string | theia.ShellQuotedString)[] {
+        return this._args;
+    }
+
+    set args(value: (string | theia.ShellQuotedString)[]) {
+        this._args = value || [];
+    }
+
+    get options(): theia.ShellExecutionOptions | undefined {
+        return this._options;
+    }
+
+    set options(value: theia.ShellExecutionOptions | undefined) {
+        this._options = value;
+    }
+
+    public computeId(): string {
+        const hash = crypto.createHash('md5');
+        hash.update('shell');
+        if (this._commandLine !== void 0) {
+            hash.update(this._commandLine);
+        }
+        if (this._command !== void 0) {
+            hash.update(typeof this._command === 'string' ? this._command : this._command.value);
+        }
+        if (this._args && this._args.length > 0) {
+            for (const arg of this._args) {
+                hash.update(typeof arg === 'string' ? arg : arg.value);
+            }
+        }
+        return hash.digest('hex');
+    }
+}
+
+export class TaskGroup {
+    private _id: string;
+
+    public static Clean: TaskGroup = new TaskGroup('clean', 'Clean');
+    public static Build: TaskGroup = new TaskGroup('build', 'Build');
+    public static Rebuild: TaskGroup = new TaskGroup('rebuild', 'Rebuild');
+    public static Test: TaskGroup = new TaskGroup('test', 'Test');
+
+    public static from(value: string) {
+        switch (value) {
+            case 'clean':
+                return TaskGroup.Clean;
+            case 'build':
+                return TaskGroup.Build;
+            case 'rebuild':
+                return TaskGroup.Rebuild;
+            case 'test':
+                return TaskGroup.Test;
+            default:
+                return undefined;
+        }
+    }
+
+    constructor(id: string, _label: string) {
+        if (typeof id !== 'string') {
+            throw illegalArgument('name');
+        }
+        if (typeof _label !== 'string') {
+            throw illegalArgument('name');
+        }
+        this._id = id;
+    }
+
+    get id(): string {
+        return this._id;
+    }
+}
+
+export enum TaskScope {
+    Global = 1,
+    Workspace = 2
+}
+
+export class Task {
+    private _definition: theia.TaskDefinition | undefined;
+    private _scope: theia.TaskScope.Global | theia.TaskScope.Workspace | theia.WorkspaceFolder | undefined;
+    private _name: string;
+    private _execution: ProcessExecution | ShellExecution | undefined;
+    private _problemMatchers: string[];
+    private _hasProblemMatchers: boolean;
+    private _isBackground: boolean;
+    private _source: string;
+    private _group: TaskGroup | undefined;
+    private _presentationOptions: theia.TaskPresentationOptions | undefined;
+
+    constructor(taskDefinition: theia.TaskDefinition,
+        scope: theia.WorkspaceFolder | theia.TaskScope.Global | theia.TaskScope.Workspace,
+        name: string,
+        source: string,
+        execution?: ProcessExecution | ShellExecution,
+        problemMatchers?: string | string[]) {
+
+        this.definition = taskDefinition;
+        this.scope = scope;
+        this.name = name;
+        this.source = source;
+        this.execution = execution;
+
+        if (typeof problemMatchers === 'string') {
+            this._problemMatchers = [problemMatchers];
+            this._hasProblemMatchers = true;
+        } else if (Array.isArray(problemMatchers)) {
+            this._problemMatchers = problemMatchers;
+            this._hasProblemMatchers = true;
+        } else {
+            this._problemMatchers = [];
+            this._hasProblemMatchers = false;
+        }
+        this._isBackground = false;
+    }
+
+    get definition(): theia.TaskDefinition | undefined {
+        return this._definition;
+    }
+
+    set definition(value: theia.TaskDefinition | undefined) {
+        if (value === void 0 || value === null) {
+            throw illegalArgument('Kind can\'t be undefined or null');
+        }
+        this.clear();
+        this._definition = value;
+    }
+
+    get scope(): theia.TaskScope.Global | theia.TaskScope.Workspace | theia.WorkspaceFolder | undefined {
+        return this._scope;
+    }
+
+    set scope(value: theia.TaskScope.Global | theia.TaskScope.Workspace | theia.WorkspaceFolder | undefined) {
+        this.clear();
+        this._scope = value;
+    }
+
+    get name(): string {
+        return this._name;
+    }
+
+    set name(value: string) {
+        if (typeof value !== 'string') {
+            throw illegalArgument('name');
+        }
+        this.clear();
+        this._name = value;
+    }
+
+    get execution(): ProcessExecution | ShellExecution | undefined {
+        return this._execution;
+    }
+
+    set execution(value: ProcessExecution | ShellExecution | undefined) {
+        if (value === null) {
+            value = undefined;
+        }
+        this.clear();
+        this._execution = value;
+    }
+
+    get problemMatchers(): string[] {
+        return this._problemMatchers;
+    }
+
+    set problemMatchers(value: string[]) {
+        if (!Array.isArray(value)) {
+            this._problemMatchers = [];
+            this._hasProblemMatchers = false;
+            return;
+        }
+        this.clear();
+        this._problemMatchers = value;
+        this._hasProblemMatchers = true;
+    }
+
+    get hasProblemMatchers(): boolean {
+        return this._hasProblemMatchers;
+    }
+
+    get isBackground(): boolean {
+        return this._isBackground;
+    }
+
+    set isBackground(value: boolean) {
+        if (value !== true && value !== false) {
+            value = false;
+        }
+        this.clear();
+        this._isBackground = value;
+    }
+
+    get source(): string {
+        return this._source;
+    }
+
+    set source(value: string) {
+        if (typeof value !== 'string' || value.length === 0) {
+            throw illegalArgument('source must be a string of length > 0');
+        }
+        this.clear();
+        this._source = value;
+    }
+
+    get group(): TaskGroup | undefined {
+        return this._group;
+    }
+
+    set group(value: TaskGroup | undefined) {
+        if (value === void 0 || value === null) {
+            this._group = undefined;
+            return;
+        }
+        this.clear();
+        this._group = value;
+    }
+
+    get presentationOptions(): theia.TaskPresentationOptions | undefined {
+        return this._presentationOptions;
+    }
+
+    set presentationOptions(value: theia.TaskPresentationOptions | undefined) {
+        if (value === null) {
+            value = undefined;
+        }
+        this.clear();
+        this._presentationOptions = value;
+    }
+
+    private clear(): void {
+        this._scope = undefined;
+        this._definition = undefined;
+        if (this._execution instanceof ProcessExecution) {
+            this._definition = {
+                type: 'process',
+                id: this._execution.computeId()
+            };
+        } else if (this._execution instanceof ShellExecution) {
+            this._definition = {
+                type: 'shell',
+                id: this._execution.computeId()
+            };
+        }
+    }
 }

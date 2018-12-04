@@ -75,7 +75,15 @@ import {
     WorkspaceEdit,
     SymbolInformation,
     FileType,
-    FileChangeType
+    FileChangeType,
+    ShellQuoting,
+    ShellExecution,
+    ProcessExecution,
+    TaskScope,
+    TaskPanelKind,
+    TaskRevealKind,
+    TaskGroup,
+    Task
 } from './types-impl';
 import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
 import { TextEditorsExtImpl } from './text-editors';
@@ -94,6 +102,7 @@ import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { MarkdownString } from './markdown-string';
 import { TreeViewsExtImpl } from './tree/tree-views';
 import { ConnectionExtImpl } from './connection-ext';
+import { TasksExtImpl } from './tasks/tasks';
 
 export function createAPIFactory(
     rpc: RPCProtocol,
@@ -118,6 +127,7 @@ export function createAPIFactory(
     const languagesExt = rpc.set(MAIN_RPC_CONTEXT.LANGUAGES_EXT, new LanguagesExtImpl(rpc, documents, commandRegistry));
     const treeViewsExt = rpc.set(MAIN_RPC_CONTEXT.TREE_VIEWS_EXT, new TreeViewsExtImpl(rpc, commandRegistry));
     rpc.set(MAIN_RPC_CONTEXT.CONNECTION_EXT, new ConnectionExtImpl(rpc));
+    const tasksExt = rpc.set(MAIN_RPC_CONTEXT.TASKS_EXT, new TasksExtImpl(rpc));
 
     return function (plugin: InternalPlugin): typeof theia {
         const commands: typeof theia.commands = {
@@ -463,6 +473,12 @@ export function createAPIFactory(
             }
         };
 
+        const tasks: typeof theia.tasks = {
+            registerTaskProvider(type: string, provider: theia.TaskProvider): theia.Disposable {
+                return tasksExt.registerTaskProvider(type, provider);
+            }
+        };
+
         return <typeof theia>{
             version: require('../../package.json').version,
             commands,
@@ -472,6 +488,7 @@ export function createAPIFactory(
             languages,
             plugins,
             debug,
+            tasks,
             // Types
             StatusBarAlignment: StatusBarAlignment,
             Disposable: Disposable,
@@ -526,7 +543,15 @@ export function createAPIFactory(
             WorkspaceEdit,
             SymbolInformation,
             FileType,
-            FileChangeType
+            FileChangeType,
+            ShellQuoting,
+            ShellExecution,
+            ProcessExecution,
+            TaskScope,
+            TaskRevealKind,
+            TaskPanelKind,
+            TaskGroup,
+            Task
         };
     };
 }
