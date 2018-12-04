@@ -133,7 +133,10 @@ export class WorkspaceService implements FrontendApplicationContribution {
         this._workspace = workspaceStat;
         if (this._workspace) {
             const uri = new URI(this._workspace.uri);
-            this.toDisposeOnWorkspace.push(await this.watcher.watchFileChanges(uri));
+            this.toDisposeOnWorkspace.push(Disposable.create(async () => {
+                const watcher = await this.watcher.watchFileChanges(uri);
+                watcher.dispose();
+            }));
             this.setURLFragment(uri.path.toString());
         } else {
             this.setURLFragment('');
