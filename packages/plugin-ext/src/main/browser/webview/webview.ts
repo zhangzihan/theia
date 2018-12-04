@@ -15,7 +15,6 @@
  ********************************************************************************/
 import { BaseWidget } from '@theia/core/lib/browser/widgets/widget';
 import { IdGenerator } from '../../../common/id-generator';
-import { MiniBrowser } from '@theia/mini-browser/lib/browser/mini-browser';
 import { Disposable, DisposableCollection } from '@theia/core';
 
 export interface WebviewWidgetOptions {
@@ -40,8 +39,7 @@ export class WebviewWidget extends BaseWidget {
         this.id = WebviewWidget.ID.nextId();
         this.title.closable = true;
         this.title.label = title;
-        this.addClass(MiniBrowser.Styles.MINI_BROWSER);
-
+        this.addClass(WebviewWidget.Styles.WEBVIEW);
     }
 
     protected handleMessage(message: any) {
@@ -235,7 +233,7 @@ export class WebviewWidget extends BaseWidget {
 export namespace WebviewWidget {
     export namespace Styles {
 
-        export const WEBVIEW_FRAME = 'theia-webview-iframe';
+        export const WEBVIEW = 'theia-webview';
 
     }
 }
