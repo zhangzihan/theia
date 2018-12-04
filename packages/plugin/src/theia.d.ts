@@ -2364,6 +2364,18 @@ declare module '@theia/plugin' {
          */
         subscriptions: { dispose(): any }[];
 
+		/**
+		 * A memento object that stores state in the context
+		 * of the currently opened [workspace](#workspace.workspaceFolders).
+		 */
+        workspaceState: Memento;
+
+		/**
+		 * A memento object that stores state independent
+		 * of the current opened [workspace](#workspace.workspaceFolders).
+		 */
+        globalState: Memento;
+
         /**
          * The absolute file path of the directory containing the extension.
          */
@@ -2750,6 +2762,26 @@ declare module '@theia/plugin' {
          */
         export function createTreeView<T>(viewId: string, options: { treeDataProvider: TreeDataProvider<T> }): TreeView<T>;
 
+        /**
+		 * Show progress in the editor. Progress is shown while running the given callback
+		 * and while the promise it returned isn't resolved nor rejected. The location at which
+		 * progress should show (and other details) is defined via the passed [`ProgressOptions`](#ProgressOptions).
+		 *
+		 * @param task A callback returning a promise. Progress state can be reported with
+		 * the provided [progress](#Progress)-object.
+		 *
+		 * To report discrete progress, use `increment` to indicate how much work has been completed. Each call with
+		 * a `increment` value will be summed up and reflected as overall progress until 100% is reached (a value of
+		 * e.g. `10` accounts for `10%` of work done).
+		 * Note that currently only `ProgressLocation.Notification` is capable of showing discrete progress.
+		 *
+		 * To monitor if the operation has been cancelled by the user, use the provided [`CancellationToken`](#CancellationToken).
+		 * Note that currently only `ProgressLocation.Notification` is supporting to show a cancel button to cancel the
+		 * long running operation.
+		 *
+		 * @return The thenable the task-callback returned.
+		 */
+        export function withProgress<R>(options: ProgressOptions, task: (progress: Progress<{ message?: string; increment?: number }>, token: CancellationToken) => Thenable<R>): Thenable<R>;
     }
 
     /**
@@ -3117,84 +3149,84 @@ declare module '@theia/plugin' {
 	 * a symbolic links, in that use `FileType.File | FileType.SymbolicLink` and
 	 * `FileType.Directory | FileType.SymbolicLink`.
 	 */
-	export enum FileType {
+    export enum FileType {
 		/**
 		 * The file type is unknown.
 		 */
-		Unknown = 0,
+        Unknown = 0,
 		/**
 		 * A regular file.
 		 */
-		File = 1,
+        File = 1,
 		/**
 		 * A directory.
 		 */
-		Directory = 2,
+        Directory = 2,
 		/**
 		 * A symbolic link to a file.
 		 */
-		SymbolicLink = 64
-	}
+        SymbolicLink = 64
+    }
 
 	/**
 	 * The `FileStat`-type represents metadata about a file
 	 */
-	export interface FileStat {
+    export interface FileStat {
 		/**
 		 * The type of the file, e.g. is a regular file, a directory, or symbolic link
 		 * to a file.
 		 */
-		type: FileType;
+        type: FileType;
 		/**
 		 * The creation timestamp in milliseconds elapsed since January 1, 1970 00:00:00 UTC.
 		 */
-		ctime: number;
+        ctime: number;
 		/**
 		 * The modification timestamp in milliseconds elapsed since January 1, 1970 00:00:00 UTC.
 		 */
-		mtime: number;
+        mtime: number;
 		/**
 		 * The size in bytes.
 		 */
-		size: number;
-	}
+        size: number;
+    }
 
 	/**
 	 * Enumeration of file change types.
 	 */
-	export enum FileChangeType {
+    export enum FileChangeType {
 
 		/**
 		 * The contents or metadata of a file have changed.
 		 */
-		Changed = 1,
+        Changed = 1,
 
 		/**
 		 * A file has been created.
 		 */
-		Created = 2,
+        Created = 2,
 
 		/**
 		 * A file has been deleted.
 		 */
-		Deleted = 3,
-	}
+        Deleted = 3,
+    }
 
 	/**
 	 * The event filesystem providers must use to signal a file change.
 	 */
-	export interface FileChangeEvent {
+    export interface FileChangeEvent {
 
 		/**
 		 * The type of change.
 		 */
-		type: FileChangeType;
+        type: FileChangeType;
 
 		/**
 		 * The uri of the file that has changed.
 		 */
-		uri: Uri;
-	}
+        uri: Uri;
+    }
 
 	/**
 	 * The filesystem provider defines what the editor needs to read, write, discover,
@@ -3208,14 +3240,14 @@ declare module '@theia/plugin' {
 	 * * *Note 3:* The word 'file' is often used to denote all [kinds](#FileType) of files, e.g.
 	 * folders, symbolic links, and regular files.
 	 */
-	export interface FileSystemProvider {
+    export interface FileSystemProvider {
 
 		/**
 		 * An event to signal that a resource has been created, changed, or deleted. This
 		 * event should fire for resources that are being [watched](#FileSystemProvider.watch)
 		 * by clients of this provider.
 		 */
-		readonly onDidChangeFile: Event<FileChangeEvent[]>;
+        readonly onDidChangeFile: Event<FileChangeEvent[]>;
 
 		/**
 		 * Subscribe to events in the file or folder denoted by `uri`.
@@ -3228,7 +3260,7 @@ declare module '@theia/plugin' {
 		 * @param options Configures the watch.
 		 * @returns A disposable that tells the provider to stop watching the `uri`.
 		 */
-		watch(uri: Uri, options: { recursive: boolean; excludes: string[] }): Disposable;
+        watch(uri: Uri, options: { recursive: boolean; excludes: string[] }): Disposable;
 
 		/**
 		 * Retrieve metadata about a file.
@@ -3241,7 +3273,7 @@ declare module '@theia/plugin' {
 		 * @return The file metadata about the file.
 		 * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when `uri` doesn't exist.
 		 */
-		stat(uri: Uri): FileStat | PromiseLike<FileStat>;
+        stat(uri: Uri): FileStat | PromiseLike<FileStat>;
 
 		/**
 		 * Retrieve all entries of a [directory](#FileType.Directory).
@@ -3250,7 +3282,7 @@ declare module '@theia/plugin' {
 		 * @return An array of name/type-tuples or a thenable that resolves to such.
 		 * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when `uri` doesn't exist.
 		 */
-		readDirectory(uri: Uri): [string, FileType][] | PromiseLike<[string, FileType][]>;
+        readDirectory(uri: Uri): [string, FileType][] | PromiseLike<[string, FileType][]>;
 
 		/**
 		 * Create a new directory (Note, that new files are created via `write`-calls).
@@ -3260,7 +3292,7 @@ declare module '@theia/plugin' {
 		 * @throws [`FileExists`](#FileSystemError.FileExists) when `uri` already exists.
 		 * @throws [`NoPermissions`](#FileSystemError.NoPermissions) when permissions aren't sufficient.
 		 */
-		createDirectory(uri: Uri): void | PromiseLike<void>;
+        createDirectory(uri: Uri): void | PromiseLike<void>;
 
 		/**
 		 * Read the entire contents of a file.
@@ -3269,7 +3301,7 @@ declare module '@theia/plugin' {
 		 * @return An array of bytes or a thenable that resolves to such.
 		 * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when `uri` doesn't exist.
 		 */
-		readFile(uri: Uri): Uint8Array | PromiseLike<Uint8Array>;
+        readFile(uri: Uri): Uint8Array | PromiseLike<Uint8Array>;
 
 		/**
 		 * Write data to a file, replacing its entire contents.
@@ -3282,7 +3314,7 @@ declare module '@theia/plugin' {
 		 * @throws [`FileExists`](#FileSystemError.FileExists) when `uri` already exists, `create` is set but `overwrite` is not set.
 		 * @throws [`NoPermissions`](#FileSystemError.NoPermissions) when permissions aren't sufficient.
 		 */
-		writeFile(uri: Uri, content: Uint8Array, options: { create: boolean, overwrite: boolean }): void | PromiseLike<void>;
+        writeFile(uri: Uri, content: Uint8Array, options: { create: boolean, overwrite: boolean }): void | PromiseLike<void>;
 
 		/**
 		 * Delete a file.
@@ -3292,7 +3324,7 @@ declare module '@theia/plugin' {
 		 * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when `uri` doesn't exist.
 		 * @throws [`NoPermissions`](#FileSystemError.NoPermissions) when permissions aren't sufficient.
 		 */
-		delete(uri: Uri, options: { recursive: boolean }): void | PromiseLike<void>;
+        delete(uri: Uri, options: { recursive: boolean }): void | PromiseLike<void>;
 
 		/**
 		 * Rename a file or folder.
@@ -3305,7 +3337,7 @@ declare module '@theia/plugin' {
 		 * @throws [`FileExists`](#FileSystemError.FileExists) when `newUri` exists and when the `overwrite` option is not `true`.
 		 * @throws [`NoPermissions`](#FileSystemError.NoPermissions) when permissions aren't sufficient.
 		 */
-		rename(oldUri: Uri, newUri: Uri, options: { overwrite: boolean }): void | PromiseLike<void>;
+        rename(oldUri: Uri, newUri: Uri, options: { overwrite: boolean }): void | PromiseLike<void>;
 
 		/**
 		 * Copy files or folders. Implementing this function is optional but it will speedup
@@ -3319,8 +3351,8 @@ declare module '@theia/plugin' {
 		 * @throws [`FileExists`](#FileSystemError.FileExists) when `destination` exists and when the `overwrite` option is not `true`.
 		 * @throws [`NoPermissions`](#FileSystemError.NoPermissions) when permissions aren't sufficient.
 		 */
-		copy?(source: Uri, destination: Uri, options: { overwrite: boolean }): void | PromiseLike<void>;
-	}
+        copy?(source: Uri, destination: Uri, options: { overwrite: boolean }): void | PromiseLike<void>;
+    }
 
     /**
      * Namespace for dealing with the current workspace. A workspace is the representation
@@ -3524,7 +3556,7 @@ declare module '@theia/plugin' {
 		 * @param options Immutable metadata about the provider.
 		 * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
 		 */
-		export function registerFileSystemProvider(scheme: string, provider: FileSystemProvider, options?: { isCaseSensitive?: boolean, isReadonly?: boolean }): Disposable;
+        export function registerFileSystemProvider(scheme: string, provider: FileSystemProvider, options?: { isCaseSensitive?: boolean, isReadonly?: boolean }): Disposable;
     }
 
     export namespace env {
@@ -5776,5 +5808,99 @@ declare module '@theia/plugin' {
          * An optional selection to apply for the document in the [editor](#TextEditor).
          */
         selection?: Range;
+    }
+
+	/**
+	 * A memento represents a storage utility. It can store and retrieve
+	 * values.
+	 */
+    export interface Memento {
+
+		/**
+		 * Return a value.
+		 *
+		 * @param key A string.
+		 * @return The stored value or `undefined`.
+		 */
+        get<T>(key: string): T | undefined;
+
+		/**
+		 * Return a value.
+		 *
+		 * @param key A string.
+		 * @param defaultValue A value that should be returned when there is no
+		 * value (`undefined`) with the given key.
+		 * @return The stored value or the defaultValue.
+		 */
+        get<T>(key: string, defaultValue: T): T;
+
+		/**
+		 * Store a value. The value must be JSON-stringifyable.
+		 *
+		 * @param key A string.
+		 * @param value A value. MUST not contain cyclic references.
+		 */
+        update(key: string, value: any): Thenable<void>;
+    }
+
+    /**
+     * Defines a generalized way of reporting progress updates.
+     */
+    export interface Progress<T> {
+
+        /**
+         * Report a progress update.
+         * @param value A progress item, like a message and/or an
+         * report on how much work finished
+         */
+        report(value: T): void;
+    }
+
+    /**
+     * A location in the editor at which progress information can be shown. It depends on the
+     * location how progress is visually represented.
+     */
+    export enum ProgressLocation {
+
+        /**
+         * Show progress for the source control viewlet, as overlay for the icon and as progress bar
+         * inside the viewlet (when visible). Neither supports cancellation nor discrete progress.
+         */
+        SourceControl = 1,
+
+        /**
+         * Show progress in the status bar of the editor. Neither supports cancellation nor discrete progress.
+         */
+        Window = 10,
+
+        /**
+         * Show progress as notification with an optional cancel button. Supports to show infinite and discrete progress.
+         */
+        Notification = 15
+    }
+
+    /**
+     * Value-object describing where and how progress should show.
+     */
+    export interface ProgressOptions {
+
+        /**
+         * The location at which progress should show.
+         */
+        location: ProgressLocation;
+
+        /**
+         * A human-readable string which will be used to describe the
+         * operation.
+         */
+        title?: string;
+
+        /**
+         * Controls if a cancel button should show to allow the user to
+         * cancel the long running operation.  Note that currently only
+         * `ProgressLocation.Notification` is supporting to show a cancel
+         * button.
+         */
+        cancellable?: boolean;
     }
 }

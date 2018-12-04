@@ -75,7 +75,8 @@ import {
     FileChangeType,
     Breakpoint,
     SourceBreakpoint,
-    FunctionBreakpoint
+    FunctionBreakpoint,
+    ProgressLocation
 } from './types-impl';
 import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
 import { TextEditorsExtImpl } from './text-editors';
@@ -99,7 +100,6 @@ export function createAPIFactory(
     rpc: RPCProtocol,
     pluginManager: PluginManager,
     envExt: EnvExtImpl,
-    connectionExt: ConnectionExtImpl,
     debugExt: DebugExtImpl,
     preferenceRegistryExt: PreferenceRegistryExtImpl): PluginAPIFactory {
 
@@ -119,8 +119,9 @@ export function createAPIFactory(
     const outputChannelRegistryExt = new OutputChannelRegistryExt(rpc);
     const languagesExt = rpc.set(MAIN_RPC_CONTEXT.LANGUAGES_EXT, new LanguagesExtImpl(rpc, documents, commandRegistry));
     const treeViewsExt = rpc.set(MAIN_RPC_CONTEXT.TREE_VIEWS_EXT, new TreeViewsExtImpl(rpc, commandRegistry));
+    const connectionExt = rpc.set(MAIN_RPC_CONTEXT.CONNECTION_EXT, new ConnectionExtImpl(rpc));
 
-    rpc.set(MAIN_RPC_CONTEXT.CONNECTION_EXT, connectionExt);
+    debugExt.inject(connectionExt, commandRegistry);
     rpc.set(MAIN_RPC_CONTEXT.DEBUG_EXT, debugExt);
 
     return function (plugin: InternalPlugin): typeof theia {
@@ -275,6 +276,17 @@ export function createAPIFactory(
             },
             createTreeView<T>(viewId: string, options: { treeDataProvider: theia.TreeDataProvider<T> }): theia.TreeView<T> {
                 return treeViewsExt.createTreeView(viewId, options);
+            },
+            withProgress<R>(
+                options: theia.ProgressOptions,
+                task: (progress: theia.Progress<{ message?: string; increment?: number }>, token: theia.CancellationToken) => Thenable<R>): Thenable<R> {
+
+                const progress = task({
+                    report: (value: any) => { }
+                }, CancellationToken.None);
+
+                progress.then(result => { }, err => { });
+                return progress;
             }
         };
 
@@ -552,7 +564,8 @@ export function createAPIFactory(
             FileChangeType,
             Breakpoint,
             SourceBreakpoint,
-            FunctionBreakpoint
+            FunctionBreakpoint,
+            ProgressLocation: ProgressLocation
         };
     };
 }
