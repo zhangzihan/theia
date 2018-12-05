@@ -55,7 +55,7 @@ export class ElectronGitInit extends DefaultGitInit {
                 }
                 await this.handleExternalNotFound();
             } catch (err) {
-                await this.handleExternalNotFound();
+                await this.handleExternalNotFound(err);
             }
         }
     }
