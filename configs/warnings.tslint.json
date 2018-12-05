@@ -6,9 +6,6 @@
         "Thenable"
       ]
     },
-    "no-any": {
-      "severity": "warning"
-    },
     "no-implicit-dependencies": {
       "severity": "warning",
       "options": [

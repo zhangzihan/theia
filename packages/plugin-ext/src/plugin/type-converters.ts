@@ -464,6 +464,7 @@ export function toDocumentSymbol(info: model.DocumentSymbol): theia.DocumentSymb
         toRange(info.selectionRange),
     );
     if (info.children) {
+        // tslint:disable-next-line:no-any
         result.children = info.children.map(toDocumentSymbol) as any;
     }
     return result;
