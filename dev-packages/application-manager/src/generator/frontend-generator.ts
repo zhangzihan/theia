@@ -120,7 +120,16 @@ if (isMaster) {
         const { screen } = electron;
 
         // Remove the default electron menus, waiting for the application to set its own.
-        Menu.setApplicationMenu(Menu.buildFromTemplate([]));
+        Menu.setApplicationMenu(Menu.buildFromTemplate([{
+            label: 'Tools',
+            role: 'help',
+            submenu: [
+                {
+                    label: 'Open Chrome DevTools',
+                    click () { BrowserWindow.getAllWindows().forEach(window => window.webContents.openDevTools()); }
+                }
+            ]
+        }]));
 
         // Window list tracker.
         const windows = [];
