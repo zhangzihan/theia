@@ -1279,9 +1279,9 @@ export enum ProgressLocation {
 }
 
 export class ProcessExecution {
-    private _process: string;
-    private _args: string[];
-    private _options: theia.ProcessExecutionOptions | undefined;
+    private executionProcess: string;
+    private arguments: string[];
+    private executionOptions: theia.ProcessExecutionOptions | undefined;
 
     constructor(process: string, options?: theia.ProcessExecutionOptions);
     constructor(process: string, args: string[], options?: theia.ProcessExecutionOptions);
@@ -1289,58 +1289,58 @@ export class ProcessExecution {
         if (typeof process !== 'string') {
             throw illegalArgument('process');
         }
-        this._process = process;
+        this.executionProcess = process;
         if (varg1 !== undefined) {
             if (Array.isArray(varg1)) {
-                this._args = varg1;
-                this._options = varg2;
+                this.arguments = varg1;
+                this.executionOptions = varg2;
             } else {
-                this._options = varg1;
+                this.executionOptions = varg1;
             }
         }
-        if (this._args === undefined) {
-            this._args = [];
+        if (this.arguments === undefined) {
+            this.arguments = [];
         }
     }
 
     get process(): string {
-        return this._process;
+        return this.executionProcess;
     }
 
     set process(value: string) {
         if (typeof value !== 'string') {
             throw illegalArgument('process');
         }
-        this._process = value;
+        this.executionProcess = value;
     }
 
     get args(): string[] {
-        return this._args;
+        return this.arguments;
     }
 
     set args(value: string[]) {
         if (!Array.isArray(value)) {
             value = [];
         }
-        this._args = value;
+        this.arguments = value;
     }
 
     get options(): theia.ProcessExecutionOptions | undefined {
-        return this._options;
+        return this.executionOptions;
     }
 
     set options(value: theia.ProcessExecutionOptions | undefined) {
-        this._options = value;
+        this.executionOptions = value;
     }
 
     public computeId(): string {
         const hash = crypto.createHash('md5');
         hash.update('process');
-        if (this._process !== void 0) {
-            hash.update(this._process);
+        if (this.executionProcess !== undefined) {
+            hash.update(this.executionProcess);
         }
-        if (this._args && this._args.length > 0) {
-            for (const arg of this._args) {
+        if (this.arguments && this.arguments.length > 0) {
+            for (const arg of this.arguments) {
                 hash.update(arg);
             }
         }
@@ -1367,10 +1367,10 @@ export enum TaskRevealKind {
 }
 
 export class ShellExecution {
-    private _commandLine: string;
-    private _command: string | theia.ShellQuotedString;
-    private _args: (string | theia.ShellQuotedString)[];
-    private _options: theia.ShellExecutionOptions | undefined;
+    private shellCommandLine: string;
+    private shellCommand: string | theia.ShellQuotedString;
+    private arguments: (string | theia.ShellQuotedString)[];
+    private shellOptions: theia.ShellExecutionOptions | undefined;
 
     constructor(commandLine: string, options?: theia.ShellExecutionOptions);
     constructor(command: string | theia.ShellQuotedString, args: (string | theia.ShellQuotedString)[], options?: theia.ShellExecutionOptions);
@@ -1383,67 +1383,67 @@ export class ShellExecution {
             if (typeof arg0 !== 'string' && typeof arg0.value !== 'string') {
                 throw illegalArgument('command');
             }
-            this._command = arg0;
-            this._args = arg1 as (string | theia.ShellQuotedString)[];
-            this._options = arg2;
+            this.shellCommand = arg0;
+            this.arguments = arg1 as (string | theia.ShellQuotedString)[];
+            this.shellOptions = arg2;
         } else {
             if (typeof arg0 !== 'string') {
                 throw illegalArgument('commandLine');
             }
-            this._commandLine = arg0;
-            this._options = arg1;
+            this.shellCommandLine = arg0;
+            this.shellOptions = arg1;
         }
     }
 
     get commandLine(): string {
-        return this._commandLine;
+        return this.shellCommandLine;
     }
 
     set commandLine(value: string) {
         if (typeof value !== 'string') {
             throw illegalArgument('commandLine');
         }
-        this._commandLine = value;
+        this.shellCommandLine = value;
     }
 
     get command(): string | theia.ShellQuotedString {
-        return this._command;
+        return this.shellCommand;
     }
 
     set command(value: string | theia.ShellQuotedString) {
         if (typeof value !== 'string' && typeof value.value !== 'string') {
             throw illegalArgument('command');
         }
-        this._command = value;
+        this.shellCommand = value;
     }
 
     get args(): (string | theia.ShellQuotedString)[] {
-        return this._args;
+        return this.arguments;
     }
 
     set args(value: (string | theia.ShellQuotedString)[]) {
-        this._args = value || [];
+        this.arguments = value || [];
     }
 
     get options(): theia.ShellExecutionOptions | undefined {
-        return this._options;
+        return this.shellOptions;
     }
 
     set options(value: theia.ShellExecutionOptions | undefined) {
-        this._options = value;
+        this.shellOptions = value;
     }
 
     public computeId(): string {
         const hash = crypto.createHash('md5');
         hash.update('shell');
-        if (this._commandLine !== void 0) {
-            hash.update(this._commandLine);
+        if (this.shellCommandLine !== undefined) {
+            hash.update(this.shellCommandLine);
         }
-        if (this._command !== void 0) {
-            hash.update(typeof this._command === 'string' ? this._command : this._command.value);
+        if (this.shellCommand !== undefined) {
+            hash.update(typeof this.shellCommand === 'string' ? this.shellCommand : this.shellCommand.value);
         }
-        if (this._args && this._args.length > 0) {
-            for (const arg of this._args) {
+        if (this.arguments && this.arguments.length > 0) {
+            for (const arg of this.arguments) {
                 hash.update(typeof arg === 'string' ? arg : arg.value);
             }
         }
@@ -1452,7 +1452,7 @@ export class ShellExecution {
 }
 
 export class TaskGroup {
-    private _id: string;
+    private groupId: string;
 
     public static Clean: TaskGroup = new TaskGroup('clean', 'Clean');
     public static Build: TaskGroup = new TaskGroup('build', 'Build');
@@ -1474,18 +1474,18 @@ export class TaskGroup {
         }
     }
 
-    constructor(id: string, _label: string) {
+    constructor(id: string, label: string) {
         if (typeof id !== 'string') {
+            throw illegalArgument('id');
+        }
+        if (typeof label !== 'string') {
             throw illegalArgument('name');
         }
-        if (typeof _label !== 'string') {
-            throw illegalArgument('name');
-        }
-        this._id = id;
+        this.groupId = id;
     }
 
     get id(): string {
-        return this._id;
+        return this.groupId;
     }
 }
 
@@ -1495,16 +1495,16 @@ export enum TaskScope {
 }
 
 export class Task {
-    private _definition: theia.TaskDefinition | undefined;
-    private _scope: theia.TaskScope.Global | theia.TaskScope.Workspace | theia.WorkspaceFolder | undefined;
-    private _name: string;
-    private _execution: ProcessExecution | ShellExecution | undefined;
-    private _problemMatchers: string[];
-    private _hasProblemMatchers: boolean;
-    private _isBackground: boolean;
-    private _source: string;
-    private _group: TaskGroup | undefined;
-    private _presentationOptions: theia.TaskPresentationOptions | undefined;
+    private taskDefinition: theia.TaskDefinition | undefined;
+    private taskScope: theia.TaskScope.Global | theia.TaskScope.Workspace | theia.WorkspaceFolder | undefined;
+    private taskName: string;
+    private taskExecution: ProcessExecution | ShellExecution | undefined;
+    private taskProblemMatchers: string[];
+    private hasTaskProblemMatchers: boolean;
+    private isTaskBackground: boolean;
+    private taskSource: string;
+    private taskGroup: TaskGroup | undefined;
+    private taskPresentationOptions: theia.TaskPresentationOptions | undefined;
 
     constructor(taskDefinition: theia.TaskDefinition,
         scope: theia.WorkspaceFolder | theia.TaskScope.Global | theia.TaskScope.Workspace,
@@ -1520,41 +1520,41 @@ export class Task {
         this.execution = execution;
 
         if (typeof problemMatchers === 'string') {
-            this._problemMatchers = [problemMatchers];
-            this._hasProblemMatchers = true;
+            this.taskProblemMatchers = [problemMatchers];
+            this.hasTaskProblemMatchers = true;
         } else if (Array.isArray(problemMatchers)) {
-            this._problemMatchers = problemMatchers;
-            this._hasProblemMatchers = true;
+            this.taskProblemMatchers = problemMatchers;
+            this.hasTaskProblemMatchers = true;
         } else {
-            this._problemMatchers = [];
-            this._hasProblemMatchers = false;
+            this.taskProblemMatchers = [];
+            this.hasTaskProblemMatchers = false;
         }
-        this._isBackground = false;
+        this.isTaskBackground = false;
     }
 
     get definition(): theia.TaskDefinition | undefined {
-        return this._definition;
+        return this.taskDefinition;
     }
 
     set definition(value: theia.TaskDefinition | undefined) {
-        if (value === void 0 || value === null) {
+        if (value === undefined || value === null) {
             throw illegalArgument('Kind can\'t be undefined or null');
         }
         this.clear();
-        this._definition = value;
+        this.taskDefinition = value;
     }
 
     get scope(): theia.TaskScope.Global | theia.TaskScope.Workspace | theia.WorkspaceFolder | undefined {
-        return this._scope;
+        return this.taskScope;
     }
 
     set scope(value: theia.TaskScope.Global | theia.TaskScope.Workspace | theia.WorkspaceFolder | undefined) {
         this.clear();
-        this._scope = value;
+        this.taskScope = value;
     }
 
     get name(): string {
-        return this._name;
+        return this.taskName;
     }
 
     set name(value: string) {
@@ -1562,11 +1562,11 @@ export class Task {
             throw illegalArgument('name');
         }
         this.clear();
-        this._name = value;
+        this.taskName = value;
     }
 
     get execution(): ProcessExecution | ShellExecution | undefined {
-        return this._execution;
+        return this.taskExecution;
     }
 
     set execution(value: ProcessExecution | ShellExecution | undefined) {
@@ -1574,30 +1574,30 @@ export class Task {
             value = undefined;
         }
         this.clear();
-        this._execution = value;
+        this.taskExecution = value;
     }
 
     get problemMatchers(): string[] {
-        return this._problemMatchers;
+        return this.taskProblemMatchers;
     }
 
     set problemMatchers(value: string[]) {
         if (!Array.isArray(value)) {
-            this._problemMatchers = [];
-            this._hasProblemMatchers = false;
+            this.taskProblemMatchers = [];
+            this.hasTaskProblemMatchers = false;
             return;
         }
         this.clear();
-        this._problemMatchers = value;
-        this._hasProblemMatchers = true;
+        this.taskProblemMatchers = value;
+        this.hasTaskProblemMatchers = true;
     }
 
     get hasProblemMatchers(): boolean {
-        return this._hasProblemMatchers;
+        return this.hasTaskProblemMatchers;
     }
 
     get isBackground(): boolean {
-        return this._isBackground;
+        return this.isTaskBackground;
     }
 
     set isBackground(value: boolean) {
@@ -1605,11 +1605,11 @@ export class Task {
             value = false;
         }
         this.clear();
-        this._isBackground = value;
+        this.isTaskBackground = value;
     }
 
     get source(): string {
-        return this._source;
+        return this.taskSource;
     }
 
     set source(value: string) {
@@ -1617,24 +1617,24 @@ export class Task {
             throw illegalArgument('source must be a string of length > 0');
         }
         this.clear();
-        this._source = value;
+        this.taskSource = value;
     }
 
     get group(): TaskGroup | undefined {
-        return this._group;
+        return this.taskGroup;
     }
 
     set group(value: TaskGroup | undefined) {
-        if (value === void 0 || value === null) {
-            this._group = undefined;
+        if (value === undefined || value === null) {
+            this.taskGroup = undefined;
             return;
         }
         this.clear();
-        this._group = value;
+        this.taskGroup = value;
     }
 
     get presentationOptions(): theia.TaskPresentationOptions | undefined {
-        return this._presentationOptions;
+        return this.taskPresentationOptions;
     }
 
     set presentationOptions(value: theia.TaskPresentationOptions | undefined) {
@@ -1642,21 +1642,21 @@ export class Task {
             value = undefined;
         }
         this.clear();
-        this._presentationOptions = value;
+        this.taskPresentationOptions = value;
     }
 
     private clear(): void {
-        this._scope = undefined;
-        this._definition = undefined;
-        if (this._execution instanceof ProcessExecution) {
-            this._definition = {
+        this.taskScope = undefined;
+        this.taskDefinition = undefined;
+        if (this.taskExecution instanceof ProcessExecution) {
+            this.taskDefinition = {
                 type: 'process',
-                id: this._execution.computeId()
+                id: this.taskExecution.computeId()
             };
-        } else if (this._execution instanceof ShellExecution) {
-            this._definition = {
+        } else if (this.taskExecution instanceof ShellExecution) {
+            this.taskDefinition = {
                 type: 'shell',
-                id: this._execution.computeId()
+                id: this.taskExecution.computeId()
             };
         }
     }
