@@ -222,6 +222,11 @@
     font-size: var(--theia-ui-font-size0);
 }
 
+.t-siw-search-container .searchHeader .search-info {
+    color: var(--theia-ui-font-color2);
+    margin-left: 17px;
+}
+
 .t-siw-search-container .resultContainer {
     height: 100%;
 }

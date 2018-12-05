@@ -22,6 +22,7 @@ import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import { Disposable } from '@theia/core/lib/common';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
+import debounce = require('lodash.debounce');
 
 export interface SearchFieldState {
     className: string;
@@ -162,7 +163,11 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
 
     protected onAfterAttach(msg: Message) {
         super.onAfterAttach(msg);
-        ReactDOM.render(<React.Fragment>{this.renderSearchHeader()}</React.Fragment>, this.searchFormContainer);
+        ReactDOM.render(
+            <React.Fragment>
+                {this.renderSearchHeader()}
+                {debounce(() => this.renderSearchInfo(), 10)}
+            </React.Fragment>, this.searchFormContainer);
         Widget.attach(this.resultTreeWidget, this.contentNode);
         this.toDisposeOnDetach.push(Disposable.create(() => {
             Widget.detach(this.resultTreeWidget);
@@ -171,7 +176,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
 
     protected onUpdateRequest(msg: Message) {
         super.onUpdateRequest(msg);
-        ReactDOM.render(<React.Fragment>{this.renderSearchHeader()}</React.Fragment>, this.searchFormContainer);
+        ReactDOM.render(<React.Fragment>{this.renderSearchHeader()}{this.renderSearchInfo()}</React.Fragment>, this.searchFormContainer);
     }
 
     protected onResize(msg: Widget.ResizeMessage): void {
@@ -464,5 +469,13 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
 
     protected splitOnComma(patterns: string): string[] {
         return patterns.split(',').map(s => s.trim());
+    }
+
+    protected renderSearchInfo(): React.ReactNode {
+        const term = this.searchTerm === '';
+        const results = this.resultNumber;
+        const files = this.resultTreeWidget.fileNumber;
+        const message = `${results} results in ${files} files`;
+        return (!term) ? <div className='search-info'>{message}</div> : '';
     }
 }

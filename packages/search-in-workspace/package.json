@@ -9,6 +9,8 @@
     "@theia/navigator": "^0.3.17",
     "@theia/process": "^0.3.17",
     "@theia/workspace": "^0.3.17",
+    "@types/lodash.debounce": "4.0.3",
+    "lodash.debounce": "^4.0.8",
     "vscode-ripgrep": "^1.2.4"
   },
   "publishConfig": {

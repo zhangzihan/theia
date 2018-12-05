@@ -181,7 +181,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     }
 
     protected rows = new Map<string, TreeWidget.NodeRow>();
-    protected updateRows = debounce(() => this.doUpdateRows(), 10);
+    protected updateRows = debounce(() => this.doUpdateRows(), 400);
     protected doUpdateRows(): void {
         const root = this.model.root;
         const rowsToUpdate: Array<[string, TreeWidget.NodeRow]> = [];
