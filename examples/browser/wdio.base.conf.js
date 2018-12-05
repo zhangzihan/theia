@@ -2,6 +2,7 @@
 const http = require('http');
 const path = require('path');
 const temp = require('temp');
+const cp = require('child_process');
 
 const wdioRunnerScript = require.resolve('webdriverio/build/lib/runner.js');
 
@@ -195,18 +196,34 @@ function makeConfig(headless) {
             // master process) starts with a temporary directory as the
             // workspace.
             const rootDir = temptrack.mkdirSync();
-            const argv = [process.argv[0], 'src-gen/backend/server.js', '--root-dir=' + rootDir];
-            return require('./src-gen/backend/server')(port, host, argv).then(created => {
-                this.execArgv = [wdioRunnerScript, cliPortKey, created.address().port,
-                    '--theia-root-dir', rootDir];
-                this.server = created;
+            const argv = ['--root-dir=' + rootDir];
+
+            return new Promise((resolve, reject) => {
+                const process = cp.fork('./src-gen/backend/main.js', argv);
+
+                process.once('message', port => {
+                    resolve({
+                        process,
+                        port,
+                    });
+                });
+
+                process.once('error', error => {
+                    reject(error);
+                });
+
+            }).then(server => {
+                this.execArgv = [wdioRunnerScript, cliPortKey, server.port,
+                    '--theia-root-dir', rootDir
+                ];
+                this.server = server.process;
             });
         },
         // Gets executed after all workers got shut down and the process is about to exit. It is not
         // possible to defer the end of the process using a promise.
         onComplete: function (exitCode) {
             if (this.server) {
-                this.server.close();
+                this.server.kill();
             }
         },
         //
