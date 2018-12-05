@@ -10,7 +10,8 @@
   },
   "theiaExtensions": [
     {
-      "backend": "lib/node/plugin-vscode-backend-module"
+      "backend": "lib/node/plugin-vscode-backend-module",
+      "frontend": "lib/browser/plugin-vscode-frontend-module"
     }
   ],
   "keywords": [
